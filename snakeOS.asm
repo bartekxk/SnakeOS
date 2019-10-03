@@ -140,6 +140,10 @@ _get_key:
 	je up
 	cmp ah,050h
 	je down
+	cmp ah,013h
+	je restart
+	cmp ah,01h
+	je exit
 	jmp done_gt1
 left:
 	sub byte [snake_x],1
@@ -152,6 +156,11 @@ up:
 	jmp done_gt1
 down:
 	add byte [snake_y],1
+restart:
+;;;todo
+	jmp done_gt1
+exit:
+	call _shutdown
 done_gt1:
 	popa
 	ret
@@ -174,7 +183,11 @@ _move_snake:
 	popa
 	ret
 ;;;;;;;;;;;;;;;;;;;;;;;_move_snake;;;;;;;;;;;;;;;;;;;;;;;;;
-
+;;;;;;;;;;;;;;;;;;;;;;;_shutdown;;;;;;;;;;;;;;;;;;;;;;;;;;
+_shutdown:
+	#todo
+	ret
+;;;;;;;;;;;;;;;;;;;;;;;_shutdown;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;boot_signature;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 	times 510-($-$$) db 0
