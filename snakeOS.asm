@@ -1,6 +1,7 @@
 %include "variables.inc"
 ;%include "functions.asm"
 BITS 16
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;configuration;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 start:
 	mov ax, 07C0h
@@ -18,9 +19,45 @@ game:
 	call _draw_board
 	call _move_snake
 	call _get_key
-	jmp game			; infinite loop
-
+	mov si, title
+	call _print_str
+	jmp game	
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;main;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+main:
+	;mov si, title
+	call _print_str
+	;call _load_strings_to_ram
+	call _menu
+	jmp $
 ;;;;;;;;;;;;;;;;;;;;;;;;functions;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;_menu;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+_menu:
+	pusha
+	call _clear_screen
+;	mov si, title
+	call _print_str
+;	mov si,option1
+	call _print_str
+;	mov si,option2
+	call _print_str
+	call _get_key
+	;jmp _menu
+	
+	popa
+	ret
+;;;;;;;;;;;;;;;;;;;;;;;;;_menu;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;_game_snake;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+_game_snake:
+	pusha
+	call _clear_screen
+	call _draw_board
+	call _move_snake
+	call _keyboard_game_support
+	jmp _game_snake			; infinite loop
+
+	popa
+	ret
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;_game_snake;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;_color;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;EXAMPLE HOW TO USE;;;;
 ;;;	mov bl, *color*;;;;
@@ -42,14 +79,23 @@ _color:
 ;;;;;;;;;;;;;;;;;;;;;;;;_clear_screen;;;;;;;;;;;;;;;;;;;;
 _clear_screen:
 	pusha
-	mov cx,25
+	mov cx, 25
+	;mov si, 07E00h
+	;add si, 162
+	;mov dh, 0           ;Cursor position line
+	;mov dl, 0           ;Cursor position column
+	;mov ah, 02h         ;Set cursor position function
+	;mov bh, 0           ;Page number
+	;int 10h             ;Interrupt call
 ;;;;;;;;;;;;;
 next_line_clear:
-	mov si,next_line_str
+	mov si, next_line_str
 	call _print_str
 	dec cx
 	cmp cx,0
+;	inc dl
 	jne next_line_clear
+;;;;;;;;;;;;;;;;;;;;;;;;;;
 	popa
 	ret
 ;;;;;;;;;;;;;;;;_clear_screen;;;;;;;;;;;;;;;;;;;;;;;
@@ -57,7 +103,6 @@ next_line_clear:
 ;;;EXAMPLE HOW TO USE;;;;
 ;;;	mov si, str;;;;
 ;;; call _print_str;;;;;
-
 _print_str:
 	pusha
 	mov ah, 0Eh
@@ -71,7 +116,7 @@ repeat_ps1:
 	popa
 	ret
 ;;;;;;;;;;;;;;;;;;;;;_print_str;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;_load_board_strings;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;_load_strings_to_ram;;;;;;;;;;;;;;;;;;;;;;;;
 _load_board_strings:
 	pusha
 	mov bx, 07E00h
@@ -101,10 +146,21 @@ repeat_lbs2:
 ;;;;;;;;;;;;;;;;;;;;
 	mov byte [bx],'x'
 	mov byte [bx+1],0
+	add bx, 2
+	mov cx, 80
+	mov ah, ' '
+repeat_lbs3:
+	mov byte [bx],ah
+	dec cx
+	inc bx
+	cmp cx,0
+	jne repeat_lbs3
 
+;;;;;;;;;;;;;;;;;
+	mov byte [bx],0
 	popa
 	ret	
-;;;;;;;;;;;;;;;;;;;;;;;_load_board_strings;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;_load_strings_to_ram;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;_draw_board;;;;;;;;;;;;;;;;;;;;;;;;;
 _draw_board:
 	pusha
@@ -129,9 +185,14 @@ repeat_db1:
 ;;;;;;;;;;;;;;;;;;;;;;;_draw_board;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;_get_key;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 _get_key:
-	pusha
     mov ah,0          
     int 16h            ; Wait for key
+	ret
+;;;;;;;;;;;;;;;;;;;;;;;_get_key;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;_keyboard_game_support;;;;;;;
+_keyboard_game_support:
+	pusha
+	call _get_key
 	cmp ah,04Bh
 	je left
     cmp ah,04Dh
@@ -164,7 +225,7 @@ exit:
 done_gt1:
 	popa
 	ret
-;;;;;;;;;;;;;;;;;;;;;;;_get_key;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;_keyboard_game_support;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;_move_snake;;;;;;;;;;;;;;;;;;;;;;;;;
 _move_snake:
 	pusha
@@ -185,7 +246,7 @@ _move_snake:
 ;;;;;;;;;;;;;;;;;;;;;;;_move_snake;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;_shutdown;;;;;;;;;;;;;;;;;;;;;;;;;;
 _shutdown:
-	#todo
+	;todo
 	ret
 ;;;;;;;;;;;;;;;;;;;;;;;_shutdown;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;boot_signature;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
