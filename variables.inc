@@ -1,7 +1,7 @@
 section .data
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;variables;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	;titlex: db 's',10,0
-	; option1: db 'Apps[1]',10,0
+	titlex: db 's',10,0
+	option1: db 'Apps[1]',10,0
 	option2 db 'Exit[2]'
 	app1 db 'Snake[1]'
 	back db 'Back'

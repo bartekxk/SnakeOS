@@ -1,6 +1,9 @@
-%include "variables.inc"
-;%include "functions.asm"
 BITS 16
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;							;;;
+;;;			SnakeOS			;;;
+;;;							;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;configuration;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 start:
@@ -13,48 +16,80 @@ start:
 	mov ds, ax
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;main;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-game:
-	call _load_board_strings
-	call _clear_screen
-	call _draw_board
-	call _move_snake
-	call _get_key
-	mov si, title
-	call _print_str
-	jmp game	
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;main;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 main:
-	;mov si, title
-	call _print_str
-	;call _load_strings_to_ram
+	call _load_strings_to_ram
 	call _menu
 	jmp $
 ;;;;;;;;;;;;;;;;;;;;;;;;functions;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;_menu;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 _menu:
 	pusha
+repeat_m1:	
 	call _clear_screen
-;	mov si, title
+	mov si, title
 	call _print_str
-;	mov si,option1
+	mov si,option1
 	call _print_str
-;	mov si,option2
+	mov si,option2
 	call _print_str
+	mov cx, 21
+	call _draw_empy_lines
 	call _get_key
-	;jmp _menu
-	
+	cmp ah,2h
+	je case_m1
+	cmp ah,3h
+	je case_m2
+	jmp repeat_m1
+case_m1:
+	call _apps
+	jmp repeat_m1
+case_m2:
+	call _shutdown
+	jmp repeat_m1
+
 	popa
 	ret
 ;;;;;;;;;;;;;;;;;;;;;;;;;_menu;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;_apps;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+_apps:
+	pusha
+repeat_a1:
+	call _clear_screen	
+	mov si, app1
+	call _print_str
+	mov si,back
+	call _print_str
+	mov cx, 22
+	call _draw_empy_lines
+	call _get_key
+	cmp ah,2h
+	je case_a1
+	cmp ah,30h
+	je case_a2
+	jmp repeat_a1
+
+case_a1:
+	call _game_snake
+	jmp repeat_a1
+case_a2:
+
+	popa
+	ret
+;;;;;;;;;;;;;;;;;;;;;;;;;_apps;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;_game_snake;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 _game_snake:
 	pusha
+	mov byte [snake_x], 40
+	mov byte [snake_y], 12
+repeat_gs1:
 	call _clear_screen
 	call _draw_board
 	call _move_snake
 	call _keyboard_game_support
-	jmp _game_snake			; infinite loop
-
+	cmp ah, 01h
+	je done_gs1
+	jmp repeat_gs1			; infinite loop
+done_gs1:
 	popa
 	ret
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;_game_snake;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -80,25 +115,25 @@ _color:
 _clear_screen:
 	pusha
 	mov cx, 25
-	;mov si, 07E00h
-	;add si, 162
-	;mov dh, 0           ;Cursor position line
-	;mov dl, 0           ;Cursor position column
-	;mov ah, 02h         ;Set cursor position function
-	;mov bh, 0           ;Page number
-	;int 10h             ;Interrupt call
-;;;;;;;;;;;;;
-next_line_clear:
+	call _draw_empy_lines
+
+	popa
+	ret
+;;;;;;;;;;;;;;;;_clear_screen;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;_draw_empy_lines;;;;;;;;;;;;;;;;;;;;;
+_draw_empy_lines:
+	pusha
+repeat_del1:
 	mov si, next_line_str
 	call _print_str
 	dec cx
 	cmp cx,0
-;	inc dl
-	jne next_line_clear
-;;;;;;;;;;;;;;;;;;;;;;;;;;
+	jne repeat_del1
+;;;;;;;;;;;;
+
 	popa
 	ret
-;;;;;;;;;;;;;;;;_clear_screen;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;_draw_empy_lines;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;_print_str;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;EXAMPLE HOW TO USE;;;;
 ;;;	mov si, str;;;;
@@ -117,7 +152,7 @@ repeat_ps1:
 	ret
 ;;;;;;;;;;;;;;;;;;;;;_print_str;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;_load_strings_to_ram;;;;;;;;;;;;;;;;;;;;;;;;
-_load_board_strings:
+_load_strings_to_ram:
 	pusha
 	mov bx, 07E00h
 	mov cx, 80
@@ -178,7 +213,8 @@ repeat_db1:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	sub si,81
 	call _print_str
-
+	mov si, snake_legend
+	call _print_str
 	popa
 	ret
 
@@ -191,7 +227,6 @@ _get_key:
 ;;;;;;;;;;;;;;;;;;;;;;;_get_key;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;_keyboard_game_support;;;;;;;
 _keyboard_game_support:
-	pusha
 	call _get_key
 	cmp ah,04Bh
 	je left
@@ -203,8 +238,6 @@ _keyboard_game_support:
 	je down
 	cmp ah,013h
 	je restart
-	cmp ah,01h
-	je exit
 	jmp done_gt1
 left:
 	sub byte [snake_x],1
@@ -220,10 +253,8 @@ down:
 restart:
 ;;;todo
 	jmp done_gt1
-exit:
-	call _shutdown
 done_gt1:
-	popa
+
 	ret
 ;;;;;;;;;;;;;;;;;;;;;;;;_keyboard_game_support;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;_move_snake;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -249,7 +280,19 @@ _shutdown:
 	;todo
 	ret
 ;;;;;;;;;;;;;;;;;;;;;;;_shutdown;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;boot_signature;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;variables;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	title: db 'Snake Operating System',10,13,0
+	option1: db 'Apps[1]',10,13,0
+	option2 db 'Exit[2]',10,13,0
+	app1 db 'Snake[1]',10,13,0
+	back db 'Back[B]',10,13,0
+	next_line_str db 10,13,0
+	snake_x db 40
+	snake_y db 12
+	snake db 'o'
+	snake_legend db 'Arrow keys, esc to exit.'
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;boot_signature;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	times 510-($-$$) db 0
 	dw 0xAA55
+
