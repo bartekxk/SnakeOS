@@ -1,7 +1,7 @@
-rm snakeOS.flp functions.flp
-nasm -f bin -o snakeOS.bin snakeOS.asm
-nasm -f bin -o functions.bin functions.asm
-dd if=snakeOS.bin of=snakeOS.flp conv=notrunc
-dd if=functions.bin of=snakeOS.flp conv=notrunc bs=512 seek=2
+rm snakeOS.flp
+nasm -f bin -o kernel.bin kernel.asm
+nasm -f bin -o bootloader.bin bootloader.asm
+dd if=bootloader.bin of=snakeOS.flp bs=512 count=1
+dd if=kernel.bin of=snakeOS.flp bs=512 count=1 seek=1
 qemu-system-i386 -fda snakeOS.flp
 mkisofs -o snakeOS.iso -b snakeOS.flp .
