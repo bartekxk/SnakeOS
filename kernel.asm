@@ -1,4 +1,5 @@
 BITS 16
+org 0x1000
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;							;;;
 ;;;			SnakeOS			;;;
@@ -7,15 +8,13 @@ BITS 16
 ;;;;;;;;;;;;;;;;;;;;;;;;functions;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;main;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 main:
-	call _load_strings_to_ram
 	call _menu
 	jmp $
 _menu:
 	pusha
 repeat_m1:	
 	call _clear_screen
-	mov si, title::0
-	add si,512
+	mov si, title
 	call _print_str
 	mov si,option1
 	call _print_str
@@ -68,6 +67,7 @@ case_a2:
 ;;;;;;;;;;;;;;;;;;;;;;;;_game_snake;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 _game_snake:
 	pusha
+	call _load_strings_to_ram
 	mov byte [snake_x], 40
 	mov byte [snake_y], 12
 repeat_gs1:
@@ -279,6 +279,6 @@ _shutdown:
 	snake_x db 40
 	snake_y db 12
 	snake db 'o'
-	snake_legend db 'Arrow keys, esc to exit.'
+	snake_legend db 'Arrow keys, esc to exit.',0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;boot_signature;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	times 512 - ($ - $$) db 0
+	times 2048 - ($ - $$) db 0
