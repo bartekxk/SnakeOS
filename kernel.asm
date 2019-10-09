@@ -18,6 +18,7 @@ _menu:
 	pusha
 repeat_m1:	
 	call _clear_screen
+	call _random
 	mov si, title
 	call _print_str
 	mov si,option1
@@ -113,6 +114,19 @@ _clear_screen:
 	popa
 	ret
 ;;;;;;;;;;;;;;;;_clear_screen;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;_random;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+_random:
+	pusha
+	mov ax, 13
+	push ax
+	mov bx, sp
+	int 0x80
+	pop ax
+	mov si,ax
+	call _print_str
+	popa
+	ret
+;;;;;;;;;;;;;;;_random;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;_draw_empy_lines;;;;;;;;;;;;;;;;;;;;;
 _draw_empy_lines:
 	pusha
@@ -283,6 +297,7 @@ section .data
 	next_line_str db 10,13,0
 	snake_x db 40
 	snake_y db 12
+	time db 0,0
 	snake db 'o'
 	snake_legend db 'Arrow keys, esc to exit.',0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;boot_signature;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
