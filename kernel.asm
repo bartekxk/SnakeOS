@@ -18,7 +18,6 @@ _menu:
 	pusha
 repeat_m1:	
 	call _clear_screen
-;	call _random
 	mov si, title
 	call _print_str
 	mov si,option1
@@ -75,6 +74,10 @@ _game_snake:
 	call _load_strings_to_ram
 	mov byte [snake_x], 40
 	mov byte [snake_y], 12
+	mov word [apples_x], 0
+	mov word [apples_x+2], 0
+	mov word [apples_y], 0
+	mov word [apples_x+2],0
 repeat_gs1:
 	call _clear_screen
 	call _draw_board
@@ -121,7 +124,7 @@ _random:
 	mov ah, 0
 	int 01ah
 	mov cx, [rand_num]
-	xor dx,cx
+	rcr dx,cl
 	mov [rand_num],dx
 	popa
 	ret
@@ -161,32 +164,30 @@ _rand_and_draw_apples:
 	mov ah,0
 	mov bh,0
 repeat_rada:
-	cmp byte [apples_x],-1
+	cmp byte [si],0
 	jne next_rada
 	call _random
-	mov dx,[rand_num]
-	mov al,dl
-	mov bl,78
+	mov dh,[rand_num]
+	mov al,dh
+	mov bl,77
 	call _modulo
 	add al,1
-	mov dl,al
-	mov byte [si],dl
+	mov byte [si],al
 	call _random
-	mov dx,[rand_num]
-	mov al,dl
-	mov bl,23
+	mov dh,[rand_num]
+	mov al,dh
+	mov bl,21
 	call _modulo
 	add al,1
-	mov dl,al
-	mov byte [di],dl
+	mov byte [di],al
 next_rada:
 	inc cx
 	inc si
 	inc di
-	cmp cx,4
+	cmp cx,2
 	jne repeat_rada
 
-call _draw_apples
+	call _draw_apples
 	popa 
 	ret
 ;;;;;;;;;;;;;;;;_rand apples;;;;;;;;;;;;;;;;;;;
@@ -296,15 +297,23 @@ _keyboard_game_support:
 	je restart
 	jmp done_gt1
 left:
+	cmp byte [snake_x],1
+	je done_gt1
 	sub byte [snake_x],1
     jmp done_gt1
 right:
+	cmp byte [snake_x],78
+	je done_gt1
 	add byte [snake_x],1
 	jmp done_gt1
 up:
+	cmp byte [snake_y],1
+	je done_gt1
 	sub byte [snake_y],1
 	jmp done_gt1
 down:
+	cmp byte [snake_y],22
+	je done_gt1
 	add byte [snake_y],1
 restart:
 ;;;todo
@@ -336,6 +345,13 @@ _draw_apples:
 	pusha
 	mov si,apples_x
 	mov di, apples_y
+	mov cx,2
+	
+repeat_da1:
+	cmp cx,0
+	je done_da1
+	dec cx
+	push cx
 	
 	mov cx,1
 	mov bp, apple
@@ -347,6 +363,16 @@ _draw_apples:
 	mov dl, [si] 
 	mov dh, [di]
 	int 10h           ;BIOS SCREEN SERVICES.  
+	
+	pop cx
+	inc si
+	inc di
+	jmp repeat_da1
+done_da1:
+	mov si,apples_y
+	call _print_str
+	mov si, apples_x
+	call _print_str
 	popa
 	ret
 ;;;;;;;;;;;;;;;;;;;;;;;_draw_apples;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -370,7 +396,7 @@ section .data
 	snake_legend db 'Arrow keys, esc to exit.',0
 	rand_num db 1,1,0
 	apple db 'o'
-	apples_x db -1,-1,-1,-1
-	apples_y db -1,-1,-1,-1
+	apples_x db -1,-1,0
+	apples_y db -1,-1,0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;boot_signature;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	times 4096 - ($ - $$) db 0
