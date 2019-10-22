@@ -4,7 +4,7 @@ org 0x7C00
 read_kernel:
 
         mov ah, 0x02 ; Read sectors from floppy drive
-        mov al, 4    ; Read 4 sector
+        mov al, 8    ; Read 4 sector
         mov ch, 0    ; Cylinder 0
         mov cl, 2    ; Sector 2
         mov dh, 0    ; Head 0

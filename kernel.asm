@@ -18,7 +18,7 @@ _menu:
 	pusha
 repeat_m1:	
 	call _clear_screen
-	call _random
+;	call _random
 	mov si, title
 	call _print_str
 	mov si,option1
@@ -79,6 +79,7 @@ repeat_gs1:
 	call _clear_screen
 	call _draw_board
 	call _move_snake
+	call _rand_and_draw_apples
 	call _keyboard_game_support
 	cmp ah, 01h
 	je done_gs1
@@ -117,16 +118,26 @@ _clear_screen:
 ;;;;;;;;;;;;;;;_random;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 _random:
 	pusha
-	mov ax, 13
-	push ax
-	mov bx, sp
-	int 0x80
-	pop ax
-	mov si,ax
-	call _print_str
+	mov ah, 0
+	int 01ah
+	mov cx, [rand_num]
+	xor dx,cx
+	mov [rand_num],dx
 	popa
 	ret
 ;;;;;;;;;;;;;;;_random;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;_modulo;;;;;;;;;;;;;;;;;;;;;;;;;;
+_modulo:
+
+repeat_mod1:
+	cmp ax,bx
+	jb done_m1
+	sub ax,bx
+	jmp repeat_mod1
+done_m1:
+
+	ret	
+;;;;;;;;;;;;;;_modulo;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;_draw_empy_lines;;;;;;;;;;;;;;;;;;;;;
 _draw_empy_lines:
 	pusha
@@ -140,7 +151,45 @@ repeat_del1:
 
 	popa
 	ret
-;;;;;;;;;;;;;;_draw_empy_lines;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;_draw_empy_lines;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;_rand apples;;;;;;;;;;;;;;;;;;;
+_rand_and_draw_apples:
+	pusha
+	mov cx,0
+	mov si,apples_x
+	mov di,apples_y
+	mov ah,0
+	mov bh,0
+repeat_rada:
+	cmp byte [apples_x],-1
+	jne next_rada
+	call _random
+	mov dx,[rand_num]
+	mov al,dl
+	mov bl,78
+	call _modulo
+	add al,1
+	mov dl,al
+	mov byte [si],dl
+	call _random
+	mov dx,[rand_num]
+	mov al,dl
+	mov bl,23
+	call _modulo
+	add al,1
+	mov dl,al
+	mov byte [di],dl
+next_rada:
+	inc cx
+	inc si
+	inc di
+	cmp cx,4
+	jne repeat_rada
+
+call _draw_apples
+	popa 
+	ret
+;;;;;;;;;;;;;;;;_rand apples;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;_print_str;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;EXAMPLE HOW TO USE;;;;
 ;;;	mov si, str;;;;
@@ -282,6 +331,25 @@ _move_snake:
 	popa
 	ret
 ;;;;;;;;;;;;;;;;;;;;;;;_move_snake;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;_draw_apples;;;;;;;;;;;;;;;;;;;;;;;;;
+_draw_apples:
+	pusha
+	mov si,apples_x
+	mov di, apples_y
+	
+	mov cx,1
+	mov bp, apple
+	mov ax, ds
+	mov es, ax        
+	mov ah, 13h        ;SERVICE TO DISPLAY STRING WITH COLOR.
+	mov bh, 0          ;PAGE (ALWAYS ZERO).
+	mov bl, 00110000b
+	mov dl, [si] 
+	mov dh, [di]
+	int 10h           ;BIOS SCREEN SERVICES.  
+	popa
+	ret
+;;;;;;;;;;;;;;;;;;;;;;;_draw_apples;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;_shutdown;;;;;;;;;;;;;;;;;;;;;;;;;;
 _shutdown:
 	;todo
@@ -298,7 +366,11 @@ section .data
 	snake_x db 40
 	snake_y db 12
 	time db 0,0
-	snake db 'o'
+	snake db 'x'
 	snake_legend db 'Arrow keys, esc to exit.',0
+	rand_num db 1,1,0
+	apple db 'o'
+	apples_x db -1,-1,-1,-1
+	apples_y db -1,-1,-1,-1
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;boot_signature;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	times 2048 - ($ - $$) db 0
+	times 4096 - ($ - $$) db 0
