@@ -49,21 +49,28 @@ repeat_a1:
 	call _clear_screen	
 	mov si, app1
 	call _print_str
+	mov si, app2
+	call _print_str
 	mov si,back
 	call _print_str
-	mov cx, 22
+	mov cx, 21
 	call _draw_empy_lines
 	call _get_key
 	cmp ah,2h
 	je case_a1
-	cmp ah,30h
+	cmp ah,3h
 	je case_a2
+	cmp ah,30h
+	je case_a3
 	jmp repeat_a1
 
 case_a1:
 	call _game_snake
 	jmp repeat_a1
 case_a2:
+	call _notepad
+	jmp repeat_a1
+case_a3:
 
 	popa
 	ret
@@ -448,16 +455,67 @@ done_da1:
 ;;;;;;;;;;;;;;;;;;;;;;;_draw_apples;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;_shutdown;;;;;;;;;;;;;;;;;;;;;;;;;;
 _shutdown:
-	;todo
+	cli
+	call _clear_screen
+	mov si,shutdown_info
+	call _print_str
+	hlt
 	ret
 ;;;;;;;;;;;;;;;;;;;;;;;_shutdown;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;_notepad;;;;;;;;;;;;;;;;;;;;;;;;;;;
+_notepad:
+	pusha
+	call _clear_screen
+	mov si,newFile
+	call _print_str
+	mov cx, 23
+	call _draw_empy_lines
+	mov dl,0
+	mov dh,1
+	call _set_cursor_position
+repeat_n1:
+	jmp repeat_n1
+	popa
+	ret
+;;;;;;;;;;;;;;;;;;;;;;_notepad;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;_print_char;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;mov bp,char;;;;;;
+;;;;;mov dl,x;;;;;;;;;
+;;;;;mov dh,y;;;;;;;;;
+_print_char:
+	pusha
+	mov cx,1
+	mov ax, ds
+	mov es, ax        
+	mov ah, 13h        ;SERVICE TO DISPLAY STRING WITH COLOR.
+	mov bh, 0          ;PAGE (ALWAYS ZERO).
+	mov bl, 11110000b
+	int 10h           ;BIOS SCREEN SERVICES.  
+
+	popa
+	ret
+;;;;;;;;;;;;;;;;;;;;;_print_char;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;_set_cursor_position;;;;;;;;;;;;;;
+;;;;;mov dl,x;;;;;;;;;
+;;;;;mov dh,y;;;;;;;;;
+_set_cursor_position:
+	pusha
+	mov  bh, 0
+	mov  ah, 02h
+	int  10h
+	popa
+	ret
+;;;;;;;;;;;;;;;;;;;;_set_cursor_position;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;variables;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 section .data
 	title db 'Snake Operating System',10,13,0
 	option1 db 'Apps[1]',10,13,0
 	option2 db 'Exit[2]',10,13,0
+	shutdown_info db 'The system is shutted down, you can power off the computer.',0
 	app1 db 'Snake[1]',10,13,0
+	app2 db 'Notepad[2]',10,13,0
 	back db 'Back[B]',10,13,0
+	newFile db 'New file:',10,13,0
 	next_line_str db 10,13,0
 	snake_memory dw 0
 	time db 0,0
