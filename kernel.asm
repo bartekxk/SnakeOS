@@ -472,9 +472,70 @@ _notepad:
 	call _draw_empy_lines
 	mov dl,0
 	mov dh,1
-	call _set_cursor_position
 repeat_n1:
+	call _set_cursor_position
+	call _get_key
+	cmp al,1Bh
+	je done_n1
+	cmp al,8h
+	je backspace
+	cmp al,0Dh
+	je next_line
+	cmp ah,04Bh
+	je left_n
+    cmp ah,04Dh
+	je right_n
+	cmp ah,048h
+	je up_n
+	cmp ah,050h
+	je down_n
+	mov [charToPrint],al
+	mov bp,charToPrint
+	call _print_char
+	cmp dl,80
+	je new_line
+	inc dl
 	jmp repeat_n1
+new_line:
+	inc dh
+	mov dl,0
+	jmp repeat_n1
+backspace:
+	dec dl
+	mov byte [charToPrint],' '
+	call _print_char
+	call _set_cursor_position
+	jmp repeat_n1
+next_line:
+	mov dl,0
+	inc dh
+	call _set_cursor_position
+	jmp repeat_n1
+left_n:
+	cmp dl,0
+	je repeat_n1
+	dec dl
+	call _set_cursor_position
+	jmp repeat_n1
+right_n:
+	cmp dl,80
+	je repeat_n1
+	inc dl
+	call _set_cursor_position
+	jmp repeat_n1
+up_n:
+	cmp dh,1
+	je repeat_n1
+	dec dh
+	call _set_cursor_position
+	jmp repeat_n1
+down_n:
+	cmp dh,24
+	je repeat_n1
+	inc dh
+	call _set_cursor_position
+	jmp repeat_n1
+done_n1:
 	popa
 	ret
 ;;;;;;;;;;;;;;;;;;;;;;_notepad;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -489,7 +550,7 @@ _print_char:
 	mov es, ax        
 	mov ah, 13h        ;SERVICE TO DISPLAY STRING WITH COLOR.
 	mov bh, 0          ;PAGE (ALWAYS ZERO).
-	mov bl, 11110000b
+	mov bl, 0Fh
 	int 10h           ;BIOS SCREEN SERVICES.  
 
 	popa
@@ -516,6 +577,7 @@ section .data
 	app2 db 'Notepad[2]',10,13,0
 	back db 'Back[B]',10,13,0
 	newFile db 'New file:',10,13,0
+	charToPrint db 0
 	next_line_str db 10,13,0
 	snake_memory dw 0
 	time db 0,0
