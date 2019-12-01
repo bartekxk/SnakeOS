@@ -1,4 +1,4 @@
-BITS 16
+[BITS 32]
 org 0x0000
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;							;;;
@@ -6,23 +6,32 @@ org 0x0000
 ;;;							;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;functions;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+title: dd 'Snake Operating System',10,13,0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;main;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 section .text
-config:
-    mov ax, cs
-    mov ds, ax 
+;;;;;;;;;;;;;;main;;;;;;;;;;;;;;;;;;;;;;;;;;
 main:
-	call _menu
+
+bits 32
+
+	mov ebx,0xb8000    ; The video address
+    mov al,'x'         ; The character to be print
+    mov ah,0x0F        ; The color: white(F) on black(0)
+    mov [ebx],ax   
+	mov esi,title
+	call _32bit_print
 	jmp $
+;;;;;;;;;;;;main;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;_menu;;;;;;;;;;;;;;;;;;;;;;
 _menu:
 	pusha
 repeat_m1:	
 	call _clear_screen
-	mov si, title
+	mov esi, title
 	call _print_str
-	mov si,option1
+	mov esi,option1
 	call _print_str
-	mov si,option2
+	mov esi,option2
 	call _print_str
 	mov cx, 21
 	call _draw_empy_lines
@@ -47,11 +56,11 @@ _apps:
 	pusha
 repeat_a1:
 	call _clear_screen	
-	mov si, app1
+	mov esi, app1
 	call _print_str
-	mov si, app2
+	mov esi, app2
 	call _print_str
-	mov si,back
+	mov esi,back
 	call _print_str
 	mov cx, 21
 	call _draw_empy_lines
@@ -78,7 +87,6 @@ case_a3:
 ;;;;;;;;;;;;;;;;;;;;;;;;_game_snake;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 _game_snake:
 	pusha
-	call _load_strings_to_ram
 	call _clear_screen
 	call _draw_board
 	mov word [apples_x], 0
@@ -164,7 +172,7 @@ done_m1:
 _draw_empy_lines:
 	pusha
 repeat_del1:
-	mov si, next_line_str
+	mov esi, next_line_str
 	call _print_str
 	dec cx
 	cmp cx,0
@@ -227,58 +235,13 @@ repeat_ps1:
 	popa
 	ret
 ;;;;;;;;;;;;;;;;;;;;;_print_str;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;_load_strings_to_ram;;;;;;;;;;;;;;;;;;;;;;;;
-_load_strings_to_ram:
-	pusha
-	mov bx, 07E00h
-	mov cx, 80
-	mov ah, 'x'
-
-repeat_lbs1:
-	mov byte [bx],ah
-	dec cx
-	inc bx
-	cmp cx,0
-	jne repeat_lbs1
-
-;;;;;;;;;;;;;;;;;;;;
-	mov byte [bx],0
-	mov byte [bx+1],'x'
-	add bx, 2
-	mov cx, 78
-	mov ah, ' '
-repeat_lbs2:
-	mov byte [bx],ah
-	dec cx
-	inc bx
-	cmp cx,0
-	jne repeat_lbs2
-
-;;;;;;;;;;;;;;;;;;;;
-	mov byte [bx],'x'
-	mov byte [bx+1],0
-	add bx, 2
-	mov cx, 80
-	mov ah, ' '
-repeat_lbs3:
-	mov byte [bx],ah
-	dec cx
-	inc bx
-	cmp cx,0
-	jne repeat_lbs3
-
-;;;;;;;;;;;;;;;;;
-	mov byte [bx],0
-	popa
-	ret	
-;;;;;;;;;;;;;;;;;;;;;;;_load_strings_to_ram;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;_draw_board;;;;;;;;;;;;;;;;;;;;;;;;;
 _draw_board:
 	pusha
 	call _clear_screen
-	mov si, 07E00h
+	mov esi, board1
 	call _print_str
-	add si, 81
+	mov esi, board2
 	mov cx,22
 repeat_db1:
 	call _print_str
@@ -287,9 +250,9 @@ repeat_db1:
 	jne repeat_db1
 	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	sub si,81
+	mov esi,board1
 	call _print_str
-	mov si, snake_legend
+	mov esi, snake_legend
 	call _print_str
 	popa
 	ret
@@ -457,16 +420,40 @@ done_da1:
 _shutdown:
 	cli
 	call _clear_screen
-	mov si,shutdown_info
+	mov esi,shutdown_info
 	call _print_str
 	hlt
 	ret
 ;;;;;;;;;;;;;;;;;;;;;;;_shutdown;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;_32bit_print;;;;;;;
+_32bit_print:
+    pusha
+    push eax
+    push esi
+    push edx
+    mov edx , 0xb8000 ; Set edx to the start of vid mem.
+
+    print_string_pm_loop:
+        mov al, [title]
+        mov ah, 0x0F
+        cmp al, 0
+        je print_string_pm_done
+        mov [edx], ax
+        add ebx, 1
+        add edx, 2
+        jmp print_string_pm_loop
+
+    print_string_pm_done:
+        pop edx 
+        pop esi 
+        pop eax 
+        ret
+;;;;_32bit_print;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;_notepad;;;;;;;;;;;;;;;;;;;;;;;;;;;
 _notepad:
 	pusha
 	call _clear_screen
-	mov si,newFile
+	mov esi,newFile
 	call _print_str
 	mov cx, 23
 	call _draw_empy_lines
@@ -566,10 +553,8 @@ _set_cursor_position:
 	int  10h
 	popa
 	ret
-;;;;;;;;;;;;;;;;;;;;_set_cursor_position;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;variables;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 section .data
-	title db 'Snake Operating System',10,13,0
 	option1 db 'Apps[1]',10,13,0
 	option2 db 'Exit[2]',10,13,0
 	shutdown_info db 'The system is shutted down, you can power off the computer.',0
@@ -589,5 +574,7 @@ section .data
 	apple db 'o'
 	apples_x db -1,-1,0
 	apples_y db -1,-1,0
+	board1 db 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',0
+	board2 db 'x                                                                              x',0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;boot_signature;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	times 4096 - ($ - $$) db 0
