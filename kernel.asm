@@ -1,26 +1,29 @@
 [BITS 32]
-org 0x0000
+org 0x0C00
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;							;;;
 ;;;			SnakeOS			;;;
 ;;;							;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;functions;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-title: dd 'Snake Operating System',10,13,0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;main;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 section .text
 ;;;;;;;;;;;;;;main;;;;;;;;;;;;;;;;;;;;;;;;;;
 main:
 
-bits 32
+[bits 32]
 
-	mov ebx,0xb8000    ; The video address
-    mov al,'x'         ; The character to be print
-    mov ah,0x0F        ; The color: white(F) on black(0)
-    mov [ebx],ax   
-	mov esi,title
-	call _32bit_print
+	call _clear_screen  
+
+	 mov ebx,0xb8000    ; The video address
+     mov al, [apple]
+	 mov ah,0x0F        ; The color: white(F) on black(0)
+     mov [ebx],ax 
+	; add ebx,2
+	; mov al,cx
+	; mov [ebx],ax
 	jmp $
+
 ;;;;;;;;;;;;main;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;_menu;;;;;;;;;;;;;;;;;;;;;;
 _menu:
@@ -139,9 +142,18 @@ _color:
 ;;;;;;;;;;;;;;;;;;;;;;;;_clear_screen;;;;;;;;;;;;;;;;;;;;
 _clear_screen:
 	pusha
-	mov cx, 25
-	call _draw_empy_lines
-
+	mov ecx, 2000
+	mov edx , 0xb8000
+cs_repeat1:
+	mov al, ' '
+	mov ah, 0x0F
+	cmp cx, 0
+	je cs_done1
+	mov [edx], ax
+	sub ecx, 1
+	add edx, 2
+	jmp cs_repeat1
+cs_done1:
 	popa
 	ret
 ;;;;;;;;;;;;;;;;_clear_screen;;;;;;;;;;;;;;;;;;;;;;;
@@ -427,19 +439,18 @@ _shutdown:
 ;;;;;;;;;;;;;;;;;;;;;;;_shutdown;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;_32bit_print;;;;;;;
 _32bit_print:
-    pusha
     push eax
     push esi
     push edx
     mov edx , 0xb8000 ; Set edx to the start of vid mem.
 
     print_string_pm_loop:
-        mov al, [title]
+        mov al, [esi]
         mov ah, 0x0F
         cmp al, 0
         je print_string_pm_done
         mov [edx], ax
-        add ebx, 1
+        add esi, 1
         add edx, 2
         jmp print_string_pm_loop
 
@@ -563,6 +574,8 @@ section .data
 	back db 'Back[B]',10,13,0
 	newFile db 'New file:',10,13,0
 	charToPrint db 0
+	space db ' ',0
+	title db 'Snake Operating System',10,13,0
 	next_line_str db 10,13,0
 	snake_memory dw 0
 	time db 0,0
@@ -571,7 +584,7 @@ section .data
 	snake_legend db 'Arrow keys, esc to exit.',0
 	rand_num db 1,1,0
 	white_sign db ' '
-	apple db 'o'
+	apple db 'o',0
 	apples_x db -1,-1,0
 	apples_y db -1,-1,0
 	board1 db 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',0

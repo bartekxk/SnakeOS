@@ -13,60 +13,56 @@ read_kernel:
         xor bx, bx   
         int 13h
 
-go_to_protected_mode:
-        xor ax, ax
-        mov ds, ax
 
-        cli
-        ;gdtr
-        lgdt [gdtr]
-        ;a20 gate
-        in al, 0x93
-        or al, 2
-        and al, ~1
-        out 0x92, al
-        ;
-        mov eax, cr0
-        or eax, 1
-        mov cr0, eax
-        jmp (CODE_DESC - NULL_DESC) : run_kernel
+switch_protected_mode:
+    mov ax, 0
+    mov ss, ax
+    mov sp, 0xFFFC
 
-;;;;;;;;;GDT;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;* Global Descriptor Table (GDT) *
-;*********************************
-NULL_DESC:
-    dd 0            ; null descriptor
-    dd 0
+    mov ax, 0
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
 
-CODE_DESC:
-    dw 0xFFFF       ; limit low
-    dw 0            ; base low
-    db 0            ; base middle
-    db 10011010b    ; access
-    db 11001111b    ; granularity
-    db 0            ; base high
+    cli
+    lgdt[gdt_descriptor]
+    mov eax, cr0
+    or eax, 0x1
+    mov cr0, eax
+    jmp CODE_SEG:0x0500
 
-DATA_DESC:
-    dw 0xFFFF       ; limit low
-    dw 0            ; base low
-    db 0            ; base middle
-    db 10010010b    ; access
-    db 11001111b    ; granularity
-    db 0            ; base high
+gdt_start:
 
-gdtr:
-    Limit dw gdtr - NULL_DESC - 1 ; length of GDT
-    Base dd NULL_DESC   ; base of GDT
+gdt_null:
+    dd 0x0
+    dd 0x0
 
-CODE_SEG equ CODE_DESC - NULL_DESC
+gdt_code:
+    dw 0xffff
+    dw 0x0
+    db 0x0
+    db 10011010b
+    db 11001111b
+    db 0x0
 
-bits 32
-run_kernel:
-        mov ax, DATA_DESC - NULL_DESC
-        mov ds, ax ; update data segment
-        mov eax, CODE_SEG
-        add eax, 0x0500
-        jmp 0x0500
+gdt_data:
+    dw 0xffff
+    dw 0x0
+    db 0x0
+    db 10010010b
+    db 11001111b
+    db 0x0
+
+gdt_end:
+
+gdt_descriptor:
+    dw gdt_end - gdt_start
+    dd gdt_start
+
+CODE_SEG equ gdt_code - gdt_start
+DATA_SEG equ gdt_data - gdt_start
+
 
 times   510-($-$$) db 0  
 dw      0xaa55              
