@@ -2,6 +2,7 @@
 #define num1 0x2
 #define num2 0x3
 #define key_b 0x30
+#define esc 0x1
 
 void _start()
 {
@@ -36,6 +37,15 @@ void printf(char data[256])
     return;
 }
 
+void printf_char(char data, int x, int y)
+{
+    char * video_memory = (char *) 0xb8000;
+    video_memory += (x + (y * 80)) * 2;
+    *video_memory = data;
+    *(video_memory + 1) = (char) 0x0F;
+
+    return;
+}
 
 void printf_xy(char data[256], int x, int y)
 {
@@ -44,10 +54,10 @@ void printf_xy(char data[256], int x, int y)
     int i = 0;
     for(;; i++, video_memory += 2)
     {
-        char x = data[i];
-        if(x == '\0')
+        char c = data[i];
+        if(c == '\0')
             break;
-        *video_memory = x;
+        *video_memory = c;
         *(video_memory + 1) = (char) 0x0F;
     }
 
@@ -82,8 +92,40 @@ void exit()
     __asm__ __volatile__ ("hlt");
 }
 
+void draw_board()
+{
+    char x = 'x';
+    char s = ' ';
+    char game_legend[256] = "Arrow keys, esc to exit.";
+    game_legend[24] = 0;
+    int i=0, j=0;
+    for(;i<24;i++)
+    {
+        j = 0;
+        for(; j < 80;j++)
+        {
+            if(j == 0 || j == 79 || i == 0 || i ==23)
+                printf_char(x, j, i);
+            else
+                printf_char(s, j, i);
+        }
+    }
+    printf_xy(game_legend, 0, 24);
+    return;
+}
+
 void snake()
 {
+    clear_screen();
+    draw_board();
+    for(;;)
+    {
+        char key = get_scancode();
+        if(key == esc)
+        {
+            return;
+        }
+    }
     return;
 }
 
